@@ -91,10 +91,45 @@ Suggested PR description:
 - Dependencies: <dependencies or none>
 ```
 
-## Next Session Prompt
+## Implementation Status
 
-Implement Python Agent Forge from this handoff. Use Python >=3.13, uv, Ruff,
-and pytest. Preserve the Codex worktree-per-feature and one-PR-per-feature
-orchestration model. Use Conventional Commits with a scoped subject and
-include brief, scope, validation, risks, and dependencies in each PR. Run
-validation and stop at the next committable milestone.
+The handoff objective is complete in the current repository.
+
+Implemented artifacts and behavior:
+
+- `pyproject.toml`, `src/python_agent_forge/`, and `tests/test_smoke.py` provide
+  the Python 3.13+ `src/` layout and smoke test.
+- `bin/python-agent-forge` provides `init`, `check`, and `help`; initialization
+  does not overwrite existing files and rejects private or secret-bearing
+  target paths.
+- Initialization generates `AGENTS.md`, `.codex/project.yml`,
+  `.codex/orchestration.yml`, `.github/workflows/python-ci.yml`,
+  `.github/pull_request_template.md`, `docs/agent-orchestration.md`,
+  `scripts/validate-python.sh`, and `scripts/caf-worktree.sh`.
+- CI and validation use uv, Ruff, pytest, Python 3.13, and
+  `astral-sh/setup-uv`.
+- Orchestration policy requires planning, one task/worktree/branch/PR per
+  independent feature, parallelism capped at four, serialization of overlaps,
+  CI and review, and human approval before merge.
+
+## Verification Checkpoint
+
+Verified on 2026-08-17 with Python 3.13.1:
+
+- `uv sync`
+- `uv run ruff format --check .` — passed
+- `uv run ruff check .` — passed
+- `uv run pytest` — 1 passed
+- `sh tests/test_cli.sh` — passed
+- `sh tests/test_init.sh` — passed
+- `git diff --check` — passed
+
+The working tree is clean. The latest commit preserves the human author,
+uses `Codex <codex@openai.com>` as committer, and contains an SSH signature
+made with the human signing key.
+
+## Follow-up Work
+
+No required implementation work remains. Future changes should preserve the
+technical contract, bootstrap artifact list, orchestration rules, and signed
+commit attribution described above.
