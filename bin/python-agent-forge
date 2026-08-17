@@ -39,14 +39,14 @@ task_id: replace-with-task-id
 pr_number: null
 pr_title: "Replace with a short, action-oriented PR title"
 brief: "Replace with a one-sentence description of the intended change"
-repository: OWNER/REPOSITORY
+repository: configure-per-repository
 base_branch: main
 branch: codex/task-name
 allowed_paths:
   - src/**
   - tests/**
 dependencies: []
-model: gpt-5.6-terra
+model: configure-per-task
 reasoning_effort: medium
 python_minimum: "3.13"
 sync_command: uv sync

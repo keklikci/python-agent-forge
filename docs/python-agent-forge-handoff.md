@@ -4,9 +4,10 @@
 
 ## Goal
 
-Build a separate Python sibling to C++ Agent Forge that gives consumer
-repositories a Codex-ready bootstrap, validation workflow, and parallel PR
-orchestration policy.
+Provide a reusable Python repository bootstrap that gives adopting repositories
+a Codex-ready validation workflow and parallel pull-request orchestration
+policy. The bootstrap must remain independent of any source repository,
+language sibling, hosting organization, model name, or consumer domain.
 
 ## Technical Contract
 
@@ -31,6 +32,20 @@ Generate `AGENTS.md`, `.codex/project.yml`, `.codex/orchestration.yml`, Python
 CI, a PR template, orchestration documentation, `validate-python.sh`, and a
 worktree helper. The CLI must provide `init`, `check`, and `help`, avoid
 overwrites by default, and reject private paths or likely secrets.
+
+## Portability Boundaries
+
+The following values are defaults, not repository identity or policy that must
+be copied blindly:
+
+- The target repository chooses its package name, task identifiers, owner,
+  remote, base branch, model, and allowed paths.
+- `main`, `codex/`, and four parallel tasks are configurable defaults.
+- Generated files must not contain local absolute paths, credentials, tokens,
+  personal data, or provider-specific assumptions beyond the documented uv,
+  Ruff, pytest, and GitHub Actions contract.
+- The orchestration rules apply to any independently deliverable feature; they
+  are not limited to Python source changes or a particular product workflow.
 
 ## Codex Git Integration Conventions
 
@@ -91,9 +106,11 @@ Suggested PR description:
 - Dependencies: <dependencies or none>
 ```
 
-## Implementation Status
+## Implementation Status (This Repository)
 
-The handoff objective is complete in the current repository.
+The implementation objective is complete for this repository. The status below
+is evidence about this implementation, not a requirement that adopting
+repositories share its paths, names, history, or commit identities.
 
 Implemented artifacts and behavior:
 
@@ -124,9 +141,11 @@ Verified on 2026-08-17 with Python 3.13.1:
 - `sh tests/test_init.sh` — passed
 - `git diff --check` — passed
 
-The working tree is clean. The latest commit preserves the human author,
-uses `Codex <codex@openai.com>` as committer, and contains an SSH signature
-made with the human signing key.
+The working tree was clean at this checkpoint. The latest local commit
+preserved the configured human author, used `Codex <codex@openai.com>` as
+committer, and contained an SSH signature made with the human signing key.
+Adopting repositories must use their own configured human identity and signing
+key; the Codex identity is not a universal repository default.
 
 ## Follow-up Work
 
