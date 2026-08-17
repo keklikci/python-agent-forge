@@ -7,13 +7,14 @@ import re
 import sys
 from pathlib import Path
 
-
 FILES = {
     "AGENTS.md": """# Python Repository Agent Instructions
 
 - Use Python 3.13 or newer and manage dependencies with `uv`.
 - Run `uv run ruff format --check .`, `uv run ruff check .`, and `uv run pytest`.
-- For multi-feature requests, use one task manifest, worktree, `codex/<task-slug>` branch, and PR per feature. Parallelize independent work up to four tasks; serialize overlapping paths and dependencies.
+- For multi-feature requests, use one task manifest, worktree,
+  `codex/<task-slug>` branch, and PR per feature. Parallelize independent work
+  up to four tasks; serialize overlapping paths and dependencies.
 - Require CI and review before human merge approval. Review agents must not merge.
 """,
     ".codex/project.yml": """python: ">=3.13"
