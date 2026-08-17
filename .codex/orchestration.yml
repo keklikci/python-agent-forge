@@ -1,0 +1,11 @@
+version: 1
+enabled: true
+max_parallel_tasks: 4
+worktree_root: ../.paf-worktrees
+branch_prefix: codex/
+one_pr_per_task: true
+serialize_overlapping_paths: true
+require_plan_before_implementation: true
+require_ci_before_review: true
+human_approval_required_before_merge: true
+review_may_merge: false

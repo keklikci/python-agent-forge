@@ -1,0 +1,145 @@
+#!/bin/sh
+set -eu
+
+program=python-agent-forge
+files='AGENTS.md .codex/project.yml .codex/orchestration.yml .github/workflows/python-ci.yml .github/pull_request_template.md docs/agent-orchestration.md scripts/validate-python.sh scripts/caf-worktree.sh'
+
+usage() {
+    printf '%s\n' \
+        'Usage:' \
+        '  python-agent-forge init <target-directory>' \
+        '  python-agent-forge check <target-directory>' \
+        '  python-agent-forge help'
+}
+
+error() { printf '%s: %s\n' "$program" "$1" >&2; exit 2; }
+
+init_repository() {
+    target=$1
+    mkdir -p "$target"
+    cd "$target"
+    if [ "${PAF_FORCE-0}" != 1 ]; then
+        for file in $files; do [ ! -e "$file" ] || error "refusing to overwrite $file (set PAF_FORCE=1 to overwrite)"; done
+    fi
+    mkdir -p .codex .github/workflows docs scripts
+    cat > AGENTS.md <<'EOF'
+# Python Repository Agent Instructions
+
+- Use Python 3.13 or newer and manage dependencies with `uv`.
+- Run `uv run ruff format --check .`, `uv run ruff check .`, and `uv run pytest`.
+- Never persist local absolute paths, credentials, tokens, or private data.
+- For independent features, plan first; use one task, worktree, `codex/<task-slug>` branch, and PR per feature; parallelize non-overlapping work; serialize overlaps; require CI, review, and human merge approval.
+EOF
+    cat > .codex/project.yml <<'EOF'
+task_id: replace-with-task-id
+pr_number: null
+pr_title: "Replace with a short, action-oriented PR title"
+brief: "Replace with a one-sentence description of the intended change"
+repository: OWNER/REPOSITORY
+base_branch: main
+branch: codex/task-name
+allowed_paths:
+  - src/**
+  - tests/**
+dependencies: []
+model: gpt-5.6-terra
+reasoning_effort: medium
+python_minimum: "3.13"
+sync_command: uv sync
+format_command: uv run ruff format --check .
+lint_command: uv run ruff check .
+test_command: uv run pytest
+status: queued
+EOF
+    cat > .codex/orchestration.yml <<'EOF'
+version: 1
+enabled: true
+max_parallel_tasks: 4
+worktree_root: ../.paf-worktrees
+branch_prefix: codex/
+one_pr_per_task: true
+serialize_overlapping_paths: true
+require_plan_before_implementation: true
+require_ci_before_review: true
+human_approval_required_before_merge: true
+review_may_merge: false
+EOF
+    cat > .github/workflows/python-ci.yml <<'EOF'
+name: Python CI
+on: [push, pull_request]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with: { python-version: "3.13" }
+      - run: uv sync
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run pytest
+EOF
+    cat > .github/pull_request_template.md <<'EOF'
+## Summary
+- PR title:
+- Brief:
+
+## Validation
+- [ ] `uv sync`
+- [ ] `uv run ruff format --check .`
+- [ ] `uv run ruff check .`
+- [ ] `uv run pytest`
+EOF
+    cat > docs/agent-orchestration.md <<'EOF'
+# Agent Orchestration
+
+For every independent feature, use one task, worktree, `codex/<task-slug>` branch, and PR. Run non-overlapping work in parallel (four tasks by default), serialize overlaps, require CI and review, and require human approval before merge.
+EOF
+    cat > scripts/validate-python.sh <<'EOF'
+#!/bin/sh
+set -eu
+uv sync
+uv run ruff format --check .
+uv run ruff check .
+uv run pytest
+EOF
+    cat > scripts/caf-worktree.sh <<'EOF'
+#!/bin/sh
+set -eu
+repo_root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+worktree_root=${CAF_WORKTREE_ROOT-"$repo_root/../.paf-worktrees"}
+task_slug=$(printf '%s' "${2-}" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9._-' '-')
+case "${1-}" in
+  create) mkdir -p "$worktree_root"; git -C "$repo_root" worktree add -b "codex/$task_slug" "$worktree_root/$task_slug" "${3-main}" ;;
+  list) git -C "$repo_root" worktree list ;;
+  remove) git -C "$repo_root" worktree remove "$worktree_root/$task_slug" ;;
+  *) printf '%s\n' 'Usage: caf-worktree.sh {create <task> [base]|list|remove <task>}' >&2; exit 2 ;;
+esac
+EOF
+    chmod +x scripts/validate-python.sh scripts/caf-worktree.sh
+    for file in $files; do printf 'generated %s\n' "$file"; done
+}
+
+check_repository() {
+    target=$1
+    [ -d "$target" ] || error "target directory does not exist: $target"
+    cd "$target"
+    failures=0
+    for file in $files; do [ -f "$file" ] || { printf 'missing %s\n' "$file" >&2; failures=$((failures + 1)); }; done
+    for file in $(find . -type f -name '*.sh' -not -path './.git/*'); do sh -n "$file" || failures=$((failures + 1)); done
+    grep -Eq '^python_minimum:.*3\.13' .codex/project.yml || failures=$((failures + 1))
+    grep -Eq '^format_command:.*ruff format' .codex/project.yml || failures=$((failures + 1))
+    grep -Eq '^lint_command:.*ruff check' .codex/project.yml || failures=$((failures + 1))
+    grep -Eq '^test_command:.*pytest' .codex/project.yml || failures=$((failures + 1))
+    if find . -type f -not -path './.git/*' -print | xargs grep -I -n -E '/(Users|home|private/var|var/folders|tmp)/|ghp_[A-Za-z0-9]{16,}|github_pat_[A-Za-z0-9]{16,}|sk-[A-Za-z0-9]{16,}' >/dev/null 2>&1; then failures=$((failures + 1)); fi
+    [ "$failures" -eq 0 ] && { printf '%s\n' 'check: OK'; return; }
+    printf 'check: %s failure(s)\n' "$failures" >&2
+    return 1
+}
+
+case "${1-help}" in
+  help|-h|--help) [ "$#" -eq 1 ] || error 'help does not accept arguments'; usage ;;
+  init) [ "$#" -eq 2 ] || error 'init requires a target directory'; init_repository "$2" ;;
+  check) [ "$#" -eq 2 ] || error 'check requires a target directory'; check_repository "$2" ;;
+  *) error "unknown command: $1" ;;
+esac
