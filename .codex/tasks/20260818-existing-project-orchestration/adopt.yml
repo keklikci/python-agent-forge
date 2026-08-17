@@ -1,0 +1,34 @@
+task_id: adopt
+brief: "Port existing Python repositories into Python Agent Forge safely."
+acceptance_criteria:
+  - "One Python CLI implements init, check, inspect, and adopt."
+  - "Inspection detects project conventions without modifying the target."
+  - "Adoption preserves unmanaged files and is idempotent after commit."
+  - "Dirty or unsafe repositories fail before mutation."
+  - "Fixture and shell compatibility tests pass."
+owned_paths:
+  - "src/python_agent_forge/**"
+  - "bin/python-agent-forge"
+  - "tests/**"
+  - "docs/existing-project-adoption.md"
+  - "README.md"
+  - "pyproject.toml"
+  - "uv.lock"
+  - ".codex/tasks/20260818-existing-project-orchestration/adopt.yml"
+exclusions:
+  - "Autonomous run, status, and resume commands"
+  - "General GitHub provider and stacked pull-request lifecycle"
+dependencies: []
+branch: codex/adopt-agent-forge
+validation_commands:
+  - "uv sync"
+  - "uv run ruff format --check ."
+  - "uv run ruff check ."
+  - "uv run pytest"
+  - "sh tests/test_cli.sh"
+  - "sh tests/test_init.sh"
+pr:
+  title: "feat(adopt): port existing Python repositories safely"
+  number: null
+  base: main
+  status: planned

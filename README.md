@@ -28,6 +28,26 @@ bin/python-agent-forge check .
 scripts/validate-python.sh
 ```
 
+## Adopt an existing project
+
+Inspect an existing local Git repository without changing it:
+
+```sh
+python-agent-forge inspect ../existing-project
+python-agent-forge inspect ../existing-project --json
+```
+
+Apply the detected, compatibility-first overlay locally with
+`python-agent-forge adopt ../existing-project --local`. Local mode is intended
+for review and offline use. Without `--local`, the forge creates an isolated
+`codex/adopt-agent-forge` worktree, commits the overlay, pushes it, and opens a
+migration pull request. Existing instructions, CI, dependency managers,
+lockfiles, Python constraints, and validation tools are preserved. Dirty
+repositories and unknown or contradictory configuration stop before mutation.
+
+See [docs/existing-project-adoption.md](docs/existing-project-adoption.md) for
+the detection and safety contract.
+
 The template itself is immediately runnable:
 
 ```sh
