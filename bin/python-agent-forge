@@ -16,6 +16,10 @@ error() { printf '%s: %s\n' "$program" "$1" >&2; exit 2; }
 
 init_repository() {
     target=$1
+    case "$target" in
+        */.ssh|*/.ssh/*|*/.gnupg|*/.gnupg/*|*/.aws|*/.aws/*|*/.config|*/.config/*|*token*|*TOKEN*|*password*|*PASSWORD*|*secret*|*SECRET*|*credential*|*CREDENTIAL*|*api_key*|*API_KEY*)
+            error "refusing private or secret-bearing target: $target" ;;
+    esac
     mkdir -p "$target"
     cd "$target"
     if [ "${PAF_FORCE-0}" != 1 ]; then

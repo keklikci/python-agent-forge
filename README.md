@@ -1,6 +1,7 @@
 # Python Agent Forge
 
-Python repository automation for Codex agents. PAF is a GitHub template and
+Python repository automation with uv, Ruff, pytest, and parallel PR workflows.
+PAF is a GitHub template and
 portable bootstrap kit for Python 3.13+ repositories using `uv`, Ruff, pytest,
 and isolated worktree-based parallel pull requests.
 
