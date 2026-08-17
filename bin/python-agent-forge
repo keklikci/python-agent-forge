@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with: { python-version: "3.13" }
       - run: uv sync
       - run: uv run ruff format --check .
@@ -85,19 +85,38 @@ jobs:
 EOF
     cat > .github/pull_request_template.md <<'EOF'
 ## Summary
-- PR title:
-- Brief:
+
+<one-sentence brief>
+
+## Changes
+
+- <implementation change>
+
+## Scope
+
+- Owned paths:
+- Out of scope:
 
 ## Validation
-- [ ] `uv sync`
-- [ ] `uv run ruff format --check .`
-- [ ] `uv run ruff check .`
-- [ ] `uv run pytest`
+
+- `uv sync`
+- `uv run ruff format --check .`
+- `uv run ruff check .`
+- `uv run pytest`
+
+## Risks and dependencies
+
+- Risks:
+- Dependencies:
 EOF
     cat > docs/agent-orchestration.md <<'EOF'
 # Agent Orchestration
 
-For every independent feature, use one task, worktree, `codex/<task-slug>` branch, and PR. Run non-overlapping work in parallel (four tasks by default), serialize overlaps, require CI and review, and require human approval before merge.
+Plan multi-feature requests before implementation. Create one task manifest,
+worktree, `codex/<task-slug>` branch, and pull request for each independent
+feature. Run independent tasks in parallel (up to four by default), serialize
+overlapping paths and dependencies, and require CI, review, and human approval
+before merge. Review agents may request changes but must not merge.
 EOF
     cat > scripts/validate-python.sh <<'EOF'
 #!/bin/sh
