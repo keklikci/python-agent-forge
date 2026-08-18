@@ -16,8 +16,12 @@ from python_agent_forge.adoption import (
     format_inspection,
     inspect_repository,
 )
+from python_agent_forge.backend import OpenAICodexBackend
 from python_agent_forge.config import ConfigurationError
 from python_agent_forge.gitops import ExecutionError
+from python_agent_forge.lifecycle import PullRequestLifecycle
+from python_agent_forge.provider import GhGitHubProvider
+from python_agent_forge.review import OpenAICodexReviewer
 from python_agent_forge.runner import (
     OrchestrationError,
     Orchestrator,
@@ -25,6 +29,32 @@ from python_agent_forge.runner import (
     status,
     status_json,
 )
+
+
+def _github_orchestrator(
+    target: Path,
+    *,
+    base: str | None = None,
+    model: str | None = None,
+    max_parallel: int | None = None,
+) -> Orchestrator:
+    backend = OpenAICodexBackend()
+    orchestrator = Orchestrator(
+        target,
+        backend,
+        base=base,
+        model=model,
+        max_parallel=max_parallel,
+    )
+    orchestrator.lifecycle = PullRequestLifecycle(
+        orchestrator.target,
+        GhGitHubProvider(),
+        OpenAICodexReviewer(),
+        backend,
+        orchestrator.policy,
+    )
+    return orchestrator
+
 
 FILES = {
     "AGENTS.md": """# Python Repository Agent Instructions
@@ -213,7 +243,7 @@ def main(argv: list[str] | None = None) -> int:
             request_text = args.request
             if args.request_file:
                 request_text = args.request_file.read_text(encoding="utf-8")
-            orchestrator = Orchestrator(
+            orchestrator = _github_orchestrator(
                 args.target,
                 base=args.base,
                 model=args.model,
@@ -221,15 +251,15 @@ def main(argv: list[str] | None = None) -> int:
             )
             run_state = orchestrator.run(request_text)
             print(format_status(run_state))
-            return 0 if run_state.status == "completed" else 1
+            return 0 if run_state.status in {"completed", "awaiting_human_merge"} else 1
         if args.command == "status":
             run_state = status(args.target, args.run_id)
             print(status_json(run_state) if args.as_json else format_status(run_state))
             return 0
         if args.command == "resume":
-            run_state = Orchestrator(args.target).resume(args.run_id)
+            run_state = _github_orchestrator(args.target).resume(args.run_id)
             print(format_status(run_state))
-            return 0 if run_state.status == "completed" else 1
+            return 0 if run_state.status in {"completed", "awaiting_human_merge"} else 1
         if args.command == "help":
             parser.print_help()
             return 0

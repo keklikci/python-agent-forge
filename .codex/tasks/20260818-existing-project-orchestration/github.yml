@@ -1,0 +1,29 @@
+task_id: github
+brief: "Manage reviewed stacked GitHub pull requests without merging."
+acceptance_criteria:
+  - "GitHub actions use an explicit verified repository and draft pull requests."
+  - "Checks and independent reviews must pass before a PR is marked ready."
+  - "Dependent PRs are retargeted only after human-merged prerequisites."
+  - "No lifecycle API can merge a pull request."
+owned_paths:
+  - "src/python_agent_forge/**"
+  - "tests/**"
+  - ".codex/tasks/20260818-existing-project-orchestration/github.yml"
+exclusions:
+  - "Direct pull-request merge operations"
+  - "Credential persistence or remote rewriting"
+dependencies:
+  - "orchestration"
+branch: codex/github-reviewed-prs
+validation_commands:
+  - "uv sync"
+  - "uv run ruff format --check ."
+  - "uv run ruff check ."
+  - "uv run pytest"
+  - "sh tests/test_cli.sh"
+  - "sh tests/test_init.sh"
+pr:
+  title: "feat(github): manage reviewed stacked pull requests"
+  number: null
+  base: codex/autonomous-orchestration
+  status: planned

@@ -24,6 +24,13 @@ class TaskState:
     start_sha: str | None = None
     stack_parent_task_id: str | None = None
     manifest: dict[str, Any] | None = None
+    pr_number: int | None = None
+    pr_url: str | None = None
+    pr_base: str | None = None
+    review_status: str | None = None
+    ci_status: str | None = None
+    ready_for_human: bool = False
+    review_attempts: int = 0
     attempts: int = 0
     error: str | None = None
     updated_at: str = field(default_factory=now)
