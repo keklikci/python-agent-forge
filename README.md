@@ -48,6 +48,10 @@ repositories and unknown or contradictory configuration stop before mutation.
 See [docs/existing-project-adoption.md](docs/existing-project-adoption.md) for
 the detection and safety contract.
 
+See [docs/architecture-and-future-hardening.md](docs/architecture-and-future-hardening.md)
+for system boundaries, durable versus runtime data, and the future hardening
+backlog.
+
 ## Run an autonomous task graph
 
 After adoption, request a plan and execute it in isolated worktrees:

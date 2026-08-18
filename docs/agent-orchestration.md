@@ -19,6 +19,9 @@ its brief, implementation, owned and out-of-scope paths, validation, risks,
 dependencies, and follow-up work. Commits made with Codex assistance preserve
 the configured human author and are signed with that human's signing key.
 
+See [architecture-and-future-hardening.md](architecture-and-future-hardening.md)
+for the durable operating contract and future edge-case backlog.
+
 ## Configuration and state
 
 `.codex/project.yml` contains detected repository facts and validation commands.
