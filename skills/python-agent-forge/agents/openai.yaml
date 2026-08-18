@@ -1,0 +1,4 @@
+interface:
+  display_name: "Python Agent Forge"
+  short_description: "Adopt and orchestrate Python repositories"
+  default_prompt: "Use $python-agent-forge to adopt this repository and orchestrate its next feature."
