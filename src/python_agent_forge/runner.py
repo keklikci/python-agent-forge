@@ -257,6 +257,7 @@ class Orchestrator:
                         for task_id, task_state in state.tasks.items()
                         if task_state.status == "failed"
                     }
+                    ready: list[tuple[TaskManifest, TaskState]] = []
                     for task_id, task_state in state.tasks.items():
                         task = by_id[task_id]
                         if task_state.status != "queued":
@@ -266,7 +267,7 @@ class Orchestrator:
                             task_state.error = "dependency failed"
                         elif (
                             set(task.dependencies) <= completed
-                            and len(running) < self.max_parallel
+                            and len(running) + len(ready) < self.max_parallel
                         ):
                             try:
                                 self._prepare_task(task, state, by_id)
@@ -279,10 +280,10 @@ class Orchestrator:
                                 task_state.error = str(error)
                                 self._save(state)
                                 continue
-                            future = executor.submit(
-                                self._task, task, state, task_state
-                            )
-                            running[future] = task_id
+                            ready.append((task, task_state))
+                    for task, task_state in ready:
+                        future = executor.submit(self._task, task, state, task_state)
+                        running[future] = task.task_id
                     if not running:
                         if all(
                             item.status in {"completed", "failed", "blocked"}
