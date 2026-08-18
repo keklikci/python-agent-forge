@@ -48,6 +48,29 @@ repositories and unknown or contradictory configuration stop before mutation.
 See [docs/existing-project-adoption.md](docs/existing-project-adoption.md) for
 the detection and safety contract.
 
+## Run an autonomous task graph
+
+After adoption, request a plan and execute it in isolated worktrees:
+
+```sh
+python-agent-forge run . --request "Implement the requested features"
+python-agent-forge status . --json
+python-agent-forge resume . RUN_ID
+```
+
+The planner is read-only. Workers receive workspace-write access only to their
+task worktree, and may not push, merge, change remotes, or handle credentials.
+The runner validates task IDs, dependencies, path ownership, repository scope,
+and configured commands. It executes up to four independent tasks concurrently
+and retries the same worker thread after validation failures. Tracked task
+manifests live under `.codex/tasks/`; absolute worktree paths, thread IDs,
+attempts, and timestamps live only in ignored `.codex/state/` files.
+
+`run` and `resume` load the optional stable Python Codex SDK lazily and use the
+saved Codex authentication. `inspect`, `adopt`, and `status` do not require the
+SDK. GitHub pull-request creation and lifecycle management are intentionally
+separate from this local orchestration layer.
+
 The template itself is immediately runnable:
 
 ```sh

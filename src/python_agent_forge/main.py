@@ -16,6 +16,15 @@ from python_agent_forge.adoption import (
     format_inspection,
     inspect_repository,
 )
+from python_agent_forge.config import ConfigurationError
+from python_agent_forge.gitops import ExecutionError
+from python_agent_forge.runner import (
+    OrchestrationError,
+    Orchestrator,
+    format_status,
+    status,
+    status_json,
+)
 
 FILES = {
     "AGENTS.md": """# Python Repository Agent Instructions
@@ -139,6 +148,9 @@ def _parser() -> argparse.ArgumentParser:
   python-agent-forge check <target-directory>
   python-agent-forge inspect TARGET [--json]
   python-agent-forge adopt TARGET [--base BRANCH] [--local]
+  python-agent-forge run TARGET (--request TEXT | --request-file FILE)
+  python-agent-forge status TARGET [RUN_ID] [--json]
+  python-agent-forge resume TARGET RUN_ID
 """,
     )
     subparsers = parser.add_subparsers(dest="command")
@@ -152,6 +164,21 @@ def _parser() -> argparse.ArgumentParser:
     adopt_parser.add_argument("target", type=Path)
     adopt_parser.add_argument("--base")
     adopt_parser.add_argument("--local", action="store_true")
+    run_parser = subparsers.add_parser("run")
+    run_parser.add_argument("target", type=Path)
+    request = run_parser.add_mutually_exclusive_group(required=True)
+    request.add_argument("--request")
+    request.add_argument("--request-file", type=Path)
+    run_parser.add_argument("--base")
+    run_parser.add_argument("--model")
+    run_parser.add_argument("--max-parallel", type=int)
+    status_parser = subparsers.add_parser("status")
+    status_parser.add_argument("target", type=Path)
+    status_parser.add_argument("run_id", nargs="?")
+    status_parser.add_argument("--json", action="store_true", dest="as_json")
+    resume_parser = subparsers.add_parser("resume")
+    resume_parser.add_argument("target", type=Path)
+    resume_parser.add_argument("run_id")
     subparsers.add_parser("help")
     return parser
 
@@ -182,10 +209,38 @@ def main(argv: list[str] | None = None) -> int:
                     f"{worktree.name} ({len(changes)} files)"
                 )
             return 0
+        if args.command == "run":
+            request_text = args.request
+            if args.request_file:
+                request_text = args.request_file.read_text(encoding="utf-8")
+            orchestrator = Orchestrator(
+                args.target,
+                base=args.base,
+                model=args.model,
+                max_parallel=args.max_parallel,
+            )
+            run_state = orchestrator.run(request_text)
+            print(format_status(run_state))
+            return 0 if run_state.status == "completed" else 1
+        if args.command == "status":
+            run_state = status(args.target, args.run_id)
+            print(status_json(run_state) if args.as_json else format_status(run_state))
+            return 0
+        if args.command == "resume":
+            run_state = Orchestrator(args.target).resume(args.run_id)
+            print(format_status(run_state))
+            return 0 if run_state.status == "completed" else 1
         if args.command == "help":
             parser.print_help()
             return 0
-    except (AdoptionError, OSError, subprocess.SubprocessError) as error:
+    except (
+        AdoptionError,
+        ConfigurationError,
+        ExecutionError,
+        OrchestrationError,
+        OSError,
+        subprocess.SubprocessError,
+    ) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
     parser.print_help(sys.stderr)
