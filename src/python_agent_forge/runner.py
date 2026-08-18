@@ -9,7 +9,7 @@ from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from python_agent_forge.backend import CodexBackend, OpenAICodexBackend
 from python_agent_forge.config import (
@@ -28,6 +28,9 @@ from python_agent_forge.gitops import (
 )
 from python_agent_forge.state import RunState, StateStore, TaskState, now
 from python_agent_forge.tasks import TaskGraph, TaskManifest
+
+if TYPE_CHECKING:
+    from python_agent_forge.lifecycle import RunLifecycle
 
 
 class OrchestrationError(RuntimeError):
@@ -95,6 +98,7 @@ class Orchestrator:
         base: str | None = None,
         model: str | None = None,
         max_parallel: int | None = None,
+        lifecycle: RunLifecycle | None = None,
     ) -> None:
         self.target = target.resolve()
         self.project = ProjectConfig.load(self.target)
@@ -105,6 +109,7 @@ class Orchestrator:
         self.base = base or self.project.base_branch
         self.model = model
         self.backend = backend or OpenAICodexBackend()
+        self.lifecycle = lifecycle
         self.store = StateStore(self.target)
         self._state_lock = threading.Lock()
 
@@ -121,6 +126,8 @@ class Orchestrator:
                 raise ConfigurationError("planner blockers must be a list of strings")
             raise OrchestrationError("planning blocked: " + "; ".join(blockers))
         graph = _planner_tasks(plan, self.policy, self.project)
+        if self.lifecycle:
+            self.lifecycle.preflight(graph, self.base)
         run_id = _run_id()
         assumptions = plan.get("assumptions", [])
         if not isinstance(assumptions, list) or not all(
@@ -147,6 +154,9 @@ class Orchestrator:
     def resume(self, run_id: str) -> RunState:
         state = self.store.load(run_id)
         graph = _load_manifests(state)
+        if self.lifecycle:
+            self.lifecycle.preflight(graph, state.base_branch)
+            self.lifecycle.reconcile(graph, state)
         state.status = "running"
         for task_state in state.tasks.values():
             if task_state.status in {"failed", "blocked", "interrupted", "running"}:
@@ -303,6 +313,8 @@ class Orchestrator:
             if all(item.status == "completed" for item in state.tasks.values())
             else "failed"
         )
+        if state.status == "completed" and self.lifecycle:
+            self.lifecycle.publish(graph, state)
         self._save(state)
         return state
 
