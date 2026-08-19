@@ -138,6 +138,16 @@ class PullRequestLifecycle:
             self.target, base, [task.branch for task in graph.tasks]
         )
 
+    def resume_preflight(
+        self, graph: TaskGraph, base: str, existing_branches: set[str]
+    ) -> None:
+        self.provider.preflight(
+            self.target,
+            base,
+            [task.branch for task in graph.tasks],
+            allow_existing_branches=existing_branches,
+        )
+
     @staticmethod
     def _base(
         task: TaskManifest, state: RunState, by_id: dict[str, TaskManifest]

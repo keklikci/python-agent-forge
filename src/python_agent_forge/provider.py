@@ -31,7 +31,13 @@ class CheckSummary:
 
 
 class GitProvider(Protocol):
-    def preflight(self, target: Path, base: str, branches: list[str]) -> None: ...
+    def preflight(
+        self,
+        target: Path,
+        base: str,
+        branches: list[str],
+        allow_existing_branches: set[str] | None = None,
+    ) -> None: ...
 
     def push(
         self, worktree: Path, branch: str, *, force_with_lease: bool = False
@@ -97,7 +103,14 @@ class GhGitHubProvider:
                 f"invalid gh JSON: {' '.join(arguments[:3])}"
             ) from error
 
-    def preflight(self, target: Path, base: str, branches: list[str]) -> None:
+    def preflight(
+        self,
+        target: Path,
+        base: str,
+        branches: list[str],
+        allow_existing_branches: set[str] | None = None,
+    ) -> None:
+        allow_existing_branches = allow_existing_branches or set()
         require_clean_repository(target)
         self._target = target
         remote = self._run(
@@ -118,7 +131,7 @@ class GhGitHubProvider:
             if result.returncode == 0:
                 self._remote_shas[branch] = result.stdout.split()[0]
                 existing = self._find_pull_request(target, branch)
-                if existing is None:
+                if existing is None and branch not in allow_existing_branches:
                     raise ConfigurationError(f"remote branch already exists: {branch}")
 
     def push(
