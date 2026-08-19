@@ -33,7 +33,7 @@ def test_official_sdk_adapter_uses_least_privilege_sandboxes(
             response = planner_response if options["sandbox"] == "read-only" else "done"
             return Thread(f"thread-{len(calls)}", response)
 
-        def resume_thread(self, thread_id: str) -> Thread:
+        def thread_resume(self, thread_id: str) -> Thread:
             resumed.append(thread_id)
             return Thread(thread_id)
 

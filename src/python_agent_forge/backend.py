@@ -107,7 +107,7 @@ identity and signing policy, then leave the worktree ready for validation.
         thread = self._threads.get(thread_id)
         if thread is None:
             client = self._sdk()
-            resume = getattr(client, "resume_thread", None)
+            resume = getattr(client, "thread_resume", None)
             if resume is None:
                 raise ConfigurationError(
                     "Codex SDK cannot resume the saved worker thread"
