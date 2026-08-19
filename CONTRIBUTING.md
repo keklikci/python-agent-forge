@@ -1,8 +1,9 @@
 # Contributing to Python Agent Forge
 
 Keep the template portable, privacy-safe, and independent of consumer
-repositories. Before submitting, run `sh -n` on shell scripts, execute the CLI
-tests, run `uv sync`, Ruff format/lint checks, and pytest.
+repositories. Before submitting, run `sh -n scripts/*.sh`, the CLI tests with
+`uv run pytest`, `uv sync`, `uv run ruff format --check .`, and
+`uv run ruff check .`.
 
 Keep generated bootstrap content portable: configure repository-specific
 values at initialization time, and never persist local absolute paths,

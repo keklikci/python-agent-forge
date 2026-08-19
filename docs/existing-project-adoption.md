@@ -30,4 +30,8 @@ changes.
 
 Unknown layouts receive a safe overlay with
 `autonomous_execution_ready: false`; configure valid install and validation
-commands before autonomous work.
+commands before autonomous work. Projects with an install command but no
+detected tests or linters receive the real bootstrap check
+`uv run python -m compileall .` (with the detected runner prefix), so a first
+tooling task can add project-specific validation. Re-run adoption after
+updating a project so the managed overlay reflects its current layout.
