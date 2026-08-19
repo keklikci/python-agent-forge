@@ -52,6 +52,11 @@ repositories and unknown or contradictory configuration stop before mutation.
 See [docs/existing-project-adoption.md](docs/existing-project-adoption.md) for
 the detection and safety contract.
 
+`check TARGET` validates a complete `init` starter bundle. After adopting an
+existing repository, use `check TARGET --adopted` to validate the smaller
+compatibility overlay without requiring Forge's starter CI and documentation
+files.
+
 See [docs/command-reference.md](docs/command-reference.md) for the compact
 CLI command reference and typical workflows.
 

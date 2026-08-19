@@ -125,6 +125,11 @@ set -eu
 printf '%s\n' 'Use python-agent-forge adoption and orchestration commands.'
 """,
 }
+ADOPTED_FILES = (
+    ".codex/project.yml",
+    ".codex/orchestration.yml",
+    "scripts/validate-python.sh",
+)
 
 PRIVATE_PARTS = {".ssh", ".gnupg", ".aws", ".config", "Library"}
 
@@ -169,6 +174,16 @@ def check(target: Path) -> int:
     return 0
 
 
+def check_adopted(target: Path) -> int:
+    """Check the compatibility overlay created by ``adopt``."""
+    missing = [name for name in ADOPTED_FILES if not (target / name).is_file()]
+    if missing:
+        print("check: missing adopted files " + ", ".join(missing), file=sys.stderr)
+        return 1
+    print(f"check: adopted integration OK ({target})")
+    return 0
+
+
 def reset(target: Path) -> int:
     """Remove Forge starter files without deleting user-owned content."""
     removed: list[str] = []
@@ -202,6 +217,7 @@ def _parser() -> argparse.ArgumentParser:
         epilog="""commands:
   python-agent-forge init <target-directory>
   python-agent-forge check <target-directory>
+  python-agent-forge check <target-directory> --adopted
   python-agent-forge reset <target-directory>
   python-agent-forge inspect TARGET [--json]
   python-agent-forge adopt TARGET [--base BRANCH] [--local]
@@ -214,6 +230,12 @@ def _parser() -> argparse.ArgumentParser:
     for command in ("init", "check", "reset"):
         subparser = subparsers.add_parser(command)
         subparser.add_argument("target_directory", type=Path)
+        if command == "check":
+            subparser.add_argument(
+                "--adopted",
+                action="store_true",
+                help="check the compatibility overlay created by adopt",
+            )
     inspect_parser = subparsers.add_parser("inspect")
     inspect_parser.add_argument("target", type=Path)
     inspect_parser.add_argument("--json", action="store_true", dest="as_json")
@@ -247,7 +269,11 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "init":
             return init(args.target_directory)
         if args.command == "check":
-            return check(args.target_directory)
+            return (
+                check_adopted(args.target_directory)
+                if args.adopted
+                else check(args.target_directory)
+            )
         if args.command == "reset":
             return reset(args.target_directory)
         if args.command == "inspect":
