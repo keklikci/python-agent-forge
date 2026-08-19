@@ -260,6 +260,36 @@ class PullRequestLifecycle:
             if not task_state.worktree:
                 raise ConfigurationError(f"task {task.task_id} has no worktree")
             worktree = Path(task_state.worktree)
+            manifest = worktree / ".codex/tasks" / state.run_id / f"{task.task_id}.yml"
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(worktree),
+                    "add",
+                    "--",
+                    str(manifest.relative_to(worktree)),
+                ],
+                check=True,
+            )
+            if (
+                subprocess.run(
+                    ["git", "-C", str(worktree), "diff", "--cached", "--quiet"],
+                    check=False,
+                ).returncode
+                != 0
+            ):
+                subprocess.run(
+                    [
+                        "git",
+                        "-C",
+                        str(worktree),
+                        "commit",
+                        "-m",
+                        f"chore({task.task_id}): record task manifest",
+                    ],
+                    check=True,
+                )
             require_clean_repository(worktree)
             base = self._base(task, state, by_id)
             self.provider.push(worktree, task.branch)

@@ -29,7 +29,10 @@ def _git(
 def require_clean_repository(target: Path) -> None:
     result = _git(target, "status", "--porcelain")
     if result.stdout.strip():
-        raise ConfigurationError("target repository has uncommitted changes")
+        details = result.stdout.strip().replace("\n", "; ")
+        raise ConfigurationError(
+            f"repository has uncommitted changes: {target.resolve()} ({details})"
+        )
 
 
 def worktree_root(target: Path) -> Path:

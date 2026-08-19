@@ -3,7 +3,10 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from python_agent_forge.gitops import changed_paths, head_sha
+import pytest
+
+from python_agent_forge.config import ConfigurationError
+from python_agent_forge.gitops import changed_paths, head_sha, require_clean_repository
 
 
 def _git(repo: Path, *args: str) -> None:
@@ -35,3 +38,17 @@ def test_changed_paths_uses_exact_start_sha_and_preserves_rename_sides(
         "src/renamed.py",
         "src/space name.py",
     ]
+
+
+def test_require_clean_repository_identifies_dirty_repository(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-b", "main")
+    _git(repo, "config", "user.name", "Fixture")
+    _git(repo, "config", "user.email", "fixture@example.invalid")
+    (repo / "pending.txt").write_text("pending\n", encoding="utf-8")
+
+    with pytest.raises(
+        ConfigurationError, match=r"repository has uncommitted changes.*pending.txt"
+    ):
+        require_clean_repository(repo)
