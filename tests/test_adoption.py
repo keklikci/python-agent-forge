@@ -220,6 +220,19 @@ def test_adopted_project_with_empty_test_paths_is_parser_compatible(
     assert project.validation_commands
 
 
+def test_packaged_project_gets_bootstrap_validation_when_no_tests_are_detected(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(tmp_path, {"requirements.txt": ""})
+
+    facts, _ = adopt_local(repo)
+
+    assert facts.validation_commands == ["uv run python -m compileall ."]
+    assert "no usable validation command" not in facts.warnings
+    project = ProjectConfig.load(repo)
+    assert project.ready
+
+
 def test_default_adoption_worktree_is_outside_target(tmp_path: Path) -> None:
     repo = _repository(tmp_path, {"requirements.txt": "pytest\n"})
     worktree = _default_worktree_path(repo)
