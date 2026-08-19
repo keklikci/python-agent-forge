@@ -51,7 +51,10 @@ def _title(task: TaskManifest) -> str:
     if not title:
         title = f"feat({task.task_id}): {task.brief[0].lower()}{task.brief[1:]}"
     if len(title) > 72 or not _TITLE.fullmatch(title):
-        raise ConfigurationError(f"task {task.task_id} has an invalid PR title")
+        title = f"feat({task.task_id}): {title[0].lower()}{title[1:]}".strip()
+        if len(title) > 72 or not _TITLE.fullmatch(title):
+            raise ConfigurationError(f"task {task.task_id} has an invalid PR title")
+        task.pr["title"] = title
     return title
 
 
