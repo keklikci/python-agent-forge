@@ -155,7 +155,19 @@ class Orchestrator:
         state = self.store.load(run_id)
         graph = _load_manifests(state)
         if self.lifecycle:
-            self.lifecycle.preflight(graph, state.base_branch)
+            resume_preflight = getattr(self.lifecycle, "resume_preflight", None)
+            if resume_preflight is None:
+                self.lifecycle.preflight(graph, state.base_branch)
+            else:
+                resume_preflight(
+                    graph,
+                    state.base_branch,
+                    {
+                        task.manifest["branch"]
+                        for task in state.tasks.values()
+                        if task.manifest and task.manifest.get("branch")
+                    },
+                )
             self.lifecycle.reconcile(graph, state)
         state.status = "running"
         for task_state in state.tasks.values():
