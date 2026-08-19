@@ -169,6 +169,32 @@ def check(target: Path) -> int:
     return 0
 
 
+def reset(target: Path) -> int:
+    """Remove Forge starter files without deleting user-owned content."""
+    removed: list[str] = []
+    preserved: list[str] = []
+    for name, content in FILES.items():
+        path = target / name
+        if not path.is_file():
+            continue
+        try:
+            current = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            preserved.append(name)
+            continue
+        if current != content:
+            preserved.append(name)
+            continue
+        path.unlink()
+        removed.append(name)
+    if preserved:
+        print(
+            "reset: preserved non-Forge files " + ", ".join(preserved), file=sys.stderr
+        )
+    print(f"reset: removed {len(removed)} Forge files from {target}")
+    return 0
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python-agent-forge",
@@ -176,6 +202,7 @@ def _parser() -> argparse.ArgumentParser:
         epilog="""commands:
   python-agent-forge init <target-directory>
   python-agent-forge check <target-directory>
+  python-agent-forge reset <target-directory>
   python-agent-forge inspect TARGET [--json]
   python-agent-forge adopt TARGET [--base BRANCH] [--local]
   python-agent-forge run TARGET (--request TEXT | --request-file FILE)
@@ -184,7 +211,7 @@ def _parser() -> argparse.ArgumentParser:
 """,
     )
     subparsers = parser.add_subparsers(dest="command")
-    for command in ("init", "check"):
+    for command in ("init", "check", "reset"):
         subparser = subparsers.add_parser(command)
         subparser.add_argument("target_directory", type=Path)
     inspect_parser = subparsers.add_parser("inspect")
@@ -221,6 +248,8 @@ def main(argv: list[str] | None = None) -> int:
             return init(args.target_directory)
         if args.command == "check":
             return check(args.target_directory)
+        if args.command == "reset":
+            return reset(args.target_directory)
         if args.command == "inspect":
             facts = inspect_repository(args.target)
             if args.as_json:

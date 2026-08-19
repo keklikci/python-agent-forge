@@ -4,6 +4,7 @@ root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 cli=$root/bin/python-agent-forge
 "$cli" help | grep -F 'python-agent-forge init <target-directory>' >/dev/null
 "$cli" help | grep -F 'inspect' >/dev/null
+"$cli" help | grep -F 'python-agent-forge reset <target-directory>' >/dev/null
 "$cli" help | grep -F 'adopt' >/dev/null
 "$cli" help | grep -F 'python-agent-forge run TARGET' >/dev/null
 "$cli" help | grep -F 'python-agent-forge status TARGET' >/dev/null
