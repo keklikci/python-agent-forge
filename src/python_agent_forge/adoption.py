@@ -366,11 +366,16 @@ def _yaml_string(value: str) -> str:
 
 
 def _yaml_list(values: list[str], indent: int = 2) -> str:
+    if not values:
+        return "[]"
     padding = " " * indent
-    return (
-        "\n".join(f"{padding}- {_yaml_string(value)}" for value in values)
-        or f"{padding}[]"
-    )
+    return "\n".join(f"{padding}- {_yaml_string(value)}" for value in values)
+
+
+def _yaml_list_field(name: str, values: list[str]) -> str:
+    """Render a list in the conservative YAML subset understood by Forge."""
+    rendered = _yaml_list(values)
+    return f"{name}: {rendered}" if rendered == "[]" else f"{name}:\n{rendered}"
 
 
 def _project_config(facts: Inspection) -> str:
@@ -378,7 +383,6 @@ def _project_config(facts: Inspection) -> str:
     base = facts.base_branch or "main"
     python = facts.python_constraint or "configure-per-repository"
     install = facts.install_command or "configure-per-repository"
-    validation = facts.validation_commands or ["configure-per-repository"]
     paths = facts.source_paths + facts.test_paths
     ready = str(bool(facts.install_command and facts.validation_commands)).lower()
     return f"""{MANAGED_HEADER}
@@ -387,15 +391,11 @@ repository: {_yaml_string(repository)}
 base_branch: {_yaml_string(base)}
 python_constraint: {_yaml_string(python)}
 package_manager: {_yaml_string(facts.package_manager)}
-source_paths:
-{_yaml_list(facts.source_paths)}
-test_paths:
-{_yaml_list(facts.test_paths)}
-owned_paths:
-{_yaml_list([f"{path}/**" for path in paths])}
+{_yaml_list_field("source_paths", facts.source_paths)}
+{_yaml_list_field("test_paths", facts.test_paths)}
+{_yaml_list_field("owned_paths", [f"{path}/**" for path in paths])}
 install_command: {_yaml_string(install)}
-validation_commands:
-{_yaml_list(validation)}
+{_yaml_list_field("validation_commands", facts.validation_commands)}
 autonomous_execution_ready: {ready}
 """
 

@@ -12,6 +12,7 @@ from python_agent_forge.adoption import (
     adopt_local,
     inspect_repository,
 )
+from python_agent_forge.config import ConfigurationError, ProjectConfig
 from python_agent_forge.main import main
 
 
@@ -203,7 +204,20 @@ def test_unknown_layout_gets_safe_not_ready_overlay(tmp_path: Path) -> None:
     assert facts.package_manager == "unknown"
     project = (repo / ".codex/project.yml").read_text()
     assert "autonomous_execution_ready: false" in project
-    assert "configure-per-repository" in project
+    assert "test_paths: []" in project
+    assert "validation_commands: []" in project
+    with pytest.raises(ConfigurationError, match="not ready"):
+        ProjectConfig.load(repo)
+
+
+def test_adopted_project_with_empty_test_paths_is_parser_compatible(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(tmp_path, {"requirements.txt": "pytest\n"})
+    adopt_local(repo)
+
+    project = ProjectConfig.load(repo)
+    assert project.validation_commands
 
 
 def test_default_adoption_worktree_is_outside_target(tmp_path: Path) -> None:
