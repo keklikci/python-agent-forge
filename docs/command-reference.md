@@ -7,6 +7,7 @@ Run these commands from the Forge repository, or use the installed
 | --- | --- |
 | `bin/python-agent-forge init TARGET` | Create the Forge starter files. |
 | `bin/python-agent-forge check TARGET` | Check required starter files. |
+| `bin/python-agent-forge check TARGET --adopted` | Check the compatibility overlay created by `adopt`. |
 | `bin/python-agent-forge reset TARGET` | Remove exact Forge starter files, preserving user-owned files. |
 | `python-agent-forge inspect TARGET [--json]` | Read-only project detection. |
 | `python-agent-forge adopt TARGET --local` | Write and review the adoption overlay locally. |
@@ -27,12 +28,17 @@ scripts/validate-python.sh
 # Existing repository
 python-agent-forge inspect TARGET --json
 python-agent-forge adopt TARGET --local
+python-agent-forge check TARGET --adopted
 python-agent-forge run TARGET --request "Describe the feature"
 python-agent-forge status TARGET --json
 python-agent-forge resume TARGET RUN_ID
 ```
 
-`inspect` is read-only. `adopt --local` changes the target and requires a
+`check TARGET` validates the complete starter bundle created by `init`.
+For an existing repository, use `check TARGET --adopted` after adoption; it
+checks only the Forge compatibility overlay and does not require the starter
+CI, template, documentation, or helper files. `inspect` is read-only.
+`adopt --local` changes the target and requires a
 clean worktree unless explicitly allowed by the Python API. The non-local
 `adopt` command uses an isolated worktree and opens a migration PR.
 

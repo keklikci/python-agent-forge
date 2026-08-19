@@ -9,6 +9,7 @@ trap 'rm -rf "$fixture"' EXIT HUP INT TERM
 grep -F 'max_parallel_tasks: 4' "$fixture/consumer/.codex/orchestration.yml" >/dev/null
 grep -F 'astral-sh/setup-uv@v6' "$fixture/consumer/.github/workflows/python-ci.yml" >/dev/null
 grep -F '## Risks and dependencies' "$fixture/consumer/.github/pull_request_template.md" >/dev/null
+"$cli" check "$fixture/consumer" --adopted | grep -F 'adopted integration OK' >/dev/null
 if "$cli" init "$fixture/consumer" >/dev/null 2>&1; then exit 1; fi
 "$cli" reset "$fixture/consumer" >/dev/null
 if "$cli" check "$fixture/consumer" >/dev/null 2>&1; then exit 1; fi
