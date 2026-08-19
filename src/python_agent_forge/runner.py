@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import threading
 import uuid
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
@@ -70,6 +71,30 @@ def _planner_tasks(
 
 def _manifest_path(worktree: Path, run_id: str, task_id: str) -> Path:
     return worktree / ".codex/tasks" / run_id / f"{task_id}.yml"
+
+
+def _commit_task_manifest(worktree: Path, run_id: str, task_id: str) -> None:
+    manifest = _manifest_path(worktree, run_id, task_id)
+    relative = str(manifest.relative_to(worktree))
+    subprocess.run(["git", "-C", str(worktree), "add", "--", relative], check=True)
+    if (
+        subprocess.run(
+            ["git", "-C", str(worktree), "diff", "--cached", "--quiet"],
+            check=False,
+        ).returncode
+        != 0
+    ):
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(worktree),
+                "commit",
+                "-m",
+                f"chore({task_id}): record task manifest",
+            ],
+            check=True,
+        )
 
 
 def _load_manifests(state: RunState) -> TaskGraph:
@@ -196,6 +221,7 @@ class Orchestrator:
             if parent_state.status != "completed" or not parent_state.worktree:
                 raise OrchestrationError(f"stack parent {parent_id} is not complete")
             parent_worktree = Path(parent_state.worktree)
+            _commit_task_manifest(parent_worktree, state.run_id, parent_id)
             require_clean_repository(parent_worktree)
             base = head_sha(parent_worktree)
             task_state.stack_parent_task_id = parent_id
