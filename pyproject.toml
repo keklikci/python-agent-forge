@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Python repository automation for Codex agents"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "openai-codex>=0.147.0",
+]
 
 [project.scripts]
 python-agent-forge = "python_agent_forge.main:main"

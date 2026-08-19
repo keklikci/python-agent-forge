@@ -82,10 +82,28 @@ and retries the same worker thread after validation failures. Tracked task
 manifests live under `.codex/tasks/`; absolute worktree paths, thread IDs,
 attempts, and timestamps live only in ignored `.codex/state/` files.
 
-`run` and `resume` load the optional stable Python Codex SDK lazily and use the
-saved Codex authentication. `inspect`, `adopt`, and `status` do not require the
-SDK. GitHub pull-request creation and lifecycle management are intentionally
-separate from this local orchestration layer.
+`run` and `resume` use the stable Python Codex SDK, which is installed by
+`uv sync` as a Forge runtime dependency. The SDK also installs the matching
+Codex CLI runtime. Existing Codex authentication is reused automatically.
+`inspect`, `adopt`, and `status` do not contact Codex and can run without an
+authenticated session. GitHub pull-request creation and lifecycle management
+are intentionally separate from this local orchestration layer.
+
+To authenticate explicitly when no existing Codex session is available:
+
+```sh
+uv run python - <<'PY'
+from openai_codex import Codex
+
+with Codex() as codex:
+    login = codex.login_chatgpt()
+    print(login.auth_url)
+    print(login.wait().success)
+PY
+```
+
+The SDK also supports device-code and API-key login flows; see the [Codex
+Python SDK getting started guide](https://github.com/openai/codex/blob/main/sdk/python/docs/getting-started.md).
 
 The template itself is immediately runnable:
 
