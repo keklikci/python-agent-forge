@@ -308,7 +308,13 @@ def inspect_repository(target: Path) -> Inspection:
     elif "unittest" in test_runners:
         validation.append(f"{prefix}python -m unittest discover")
     if not validation:
-        warnings.append("no usable validation command was detected")
+        if install_command:
+            # Keep adoption executable while a project is being bootstrapped.
+            # This is a real, dependency-light check that can be replaced by
+            # project-specific tests and linters in a later change.
+            validation.append(f"{prefix}python -m compileall .")
+        else:
+            warnings.append("no usable validation command was detected")
 
     workflow_dir = resolved / ".github/workflows"
     workflows = (
