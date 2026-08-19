@@ -28,6 +28,10 @@ bin/python-agent-forge check .
 scripts/validate-python.sh
 ```
 
+To remove a prior Forge starter integration before initializing again, run
+`bin/python-agent-forge reset TARGET`. It removes only exact Forge-generated
+files and preserves customized or user-owned files such as `AGENTS.md`.
+
 ## Adopt an existing project
 
 Inspect an existing local Git repository without changing it:

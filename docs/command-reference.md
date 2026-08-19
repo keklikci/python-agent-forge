@@ -7,6 +7,7 @@ Run these commands from the Forge repository, or use the installed
 | --- | --- |
 | `bin/python-agent-forge init TARGET` | Create the Forge starter files. |
 | `bin/python-agent-forge check TARGET` | Check required starter files. |
+| `bin/python-agent-forge reset TARGET` | Remove exact Forge starter files, preserving user-owned files. |
 | `python-agent-forge inspect TARGET [--json]` | Read-only project detection. |
 | `python-agent-forge adopt TARGET --local` | Write and review the adoption overlay locally. |
 | `python-agent-forge adopt TARGET [--base BRANCH]` | Create, push, and open the adoption PR. |
@@ -49,3 +50,8 @@ uv run ruff format --check .
 uv run ruff check .
 uv run pytest
 ```
+
+If `init` is blocked by a previous Forge setup, run `bin/python-agent-forge
+reset TARGET` and then `init` again. Reset removes only files whose contents
+exactly match Forge's starter files; it preserves customized or user-owned
+files such as `AGENTS.md` and reports them on stderr.
